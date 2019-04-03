@@ -1,6 +1,7 @@
+// A Java program for a Client 
 import java.net.*; 
 import java.io.*; 
-
+  
 public class client 
 { 
     // initialize socket and input output streams 
@@ -41,7 +42,7 @@ public class client
             try
             { 
                 line = input.readLine(); 
-                out.writeUTF(line); 
+                out.write(line.getBytes()); 
             } 
             catch(IOException i) 
             { 
