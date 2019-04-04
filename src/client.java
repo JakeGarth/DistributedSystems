@@ -43,8 +43,6 @@ public class client {
 		String str1 = "";
 		String str2 = "";
 
-		String open = "HELO";
-
 		// keep reading until "Over" is input
 		while (!str1.equals("Over")) {
 			try {
