@@ -10,6 +10,9 @@ public class client {
 	private DataInputStream input = null;
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
+	private HashMap jobs = new HashMap(); 
+	
+
 
 	
 
@@ -75,49 +78,55 @@ public class client {
 		client client = new client("127.0.0.1", 8096);
 	}
 
-	// this section is for scheduling
+	public void connect() {
 
-	public class jobMap {
-		public jobMap(Integer jobID, Integer runtime, Integer jCores, Integer jMemory, Integer jDisk) {
 
+			sendReceive("HELO");
+			sendReceive("AUTH Lewis");
+			String largest = checkServer();
+			//scheduler(largest);
+		
+	}
+	
+	private void scheduler(String s) {
+		String buffer = "empty";
+		while(!buffer.equals("NONE")) {
+			buffer = sendReceive("REDY");
+			if(buffer!="NONE") {
+				String[] jobN = buffer.split(" ");
+				
+			
+				String jobInfo = jobN[4]+"|" +jobN[5]+"|"+jobN[6];//save relevant info
+			
+				jobs.put(jobN[2],jobInfo);//save job as hashmap
+				sendReceive("SCHD " + jobN[2] + " 4xlarge 1");
+			} 
 		}
 	}
+	
+	private String checkServer(){
+		String largest = "";
+		
+		sendReceive("RESC All");
+		
+		return largest;
+	}
 
-	jobMap test = new jobMap(1, 2, 3, 4, 5);
-	serverMap test2 = new serverMap("Large", 2, 3, 4);
-
-	public void connect() {
+	private String sendReceive(String s) {
 		try {
-			String HELO = "HELO\n";
-			String AUTH = "AUTH Lewis\n";
+			String send = s + "\n";
+			out.write(send.getBytes());
+			String RCVD = dInput.readLine();	
+			
+			
+			System.out.print("SENT: " + s + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");
 
-			System.out.print("SENT: " + HELO);
-
-			out.write(HELO.getBytes());
-
-			System.out.println("RCVD: " + dInput.readLine());
-			System.out.print("SENT: " + AUTH);
-
-			out.write(AUTH.getBytes());
-
-			System.out.println("RCVD: " + dInput.readLine());
-			
-			out.write("REDY".getBytes());
-			
-			String[] jobN = dInput.readLine().split(" ");
-			
-			
-			
-			
+			return RCVD;
 		} catch (IOException i) {
 			System.out.println(i);
+			return "";
 		}
 	}
-
-	public class serverMap {
-		public serverMap(String a, Integer cores, Integer memory, Integer disk) {
-
-		}
-	}
-
+	
 }
