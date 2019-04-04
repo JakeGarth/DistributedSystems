@@ -11,6 +11,8 @@ public class client {
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
 
+	
+
 	// constructor to put ip address and port
 	public client(String address, int port) {
 		System.out.println("# ds-sim COMP335@MQ, s1, 2019");
@@ -98,11 +100,18 @@ public class client {
 
 			out.write(AUTH.getBytes());
 
-			System.out.println("RDVD: " + dInput.readLine());
+			System.out.println("RCVD: " + dInput.readLine());
+			
+			out.write("REDY".getBytes());
+			
+			String[] jobN = dInput.readLine().split(" ");
+			
+			
+			
+			
 		} catch (IOException i) {
 			System.out.println(i);
 		}
-
 	}
 
 	public class serverMap {
