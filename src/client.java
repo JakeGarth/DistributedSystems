@@ -1,10 +1,10 @@
 
-// A Java program for a Client 
+// A Java program for a client 
 import java.net.*;
 import java.util.HashMap;
 import java.io.*;
 
-public class Client {
+public class client {
 	// initialize socket and input output streams
 	private Socket socket = null;
 	private DataInputStream input = null;
@@ -17,9 +17,9 @@ public class Client {
 	
 
 	// constructor to put ip address and port
-	public Client(String address, int port) {
+	public client(String address, int port) {
 		System.out.println("# ds-sim COMP335@MQ, s1, 2019");
-		System.out.println("# Client Server started!");
+		System.out.println("# client Server started!");
 		System.out.println("# Connection Initiated...");
 
 		// establish a connection
@@ -75,7 +75,7 @@ public class Client {
 	}
 
 	public static void main(String args[]) {
-		Client client = new Client("127.0.0.1", 8096);
+		client client = new client("127.0.0.1", 8096);
 	}
 
 	public void connect() {
