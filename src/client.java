@@ -1,7 +1,6 @@
 
 // A Java program for a client 
 import java.net.*;
-import java.util.HashMap;
 import java.io.*;
 
 public class client {
@@ -10,7 +9,7 @@ public class client {
 	private DataInputStream input = null;
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
-	private HashMap jobs = new HashMap(); 
+
 	
 
 
@@ -83,47 +82,68 @@ public class client {
 
 			sendReceive("HELO");
 			sendReceive("AUTH Lewis");
-			sendReceive("REDY");
-		    checkServer();
+			scheduler();
+		    
+		    
 			//String largest = checkServer();
 			//scheduler(largest);
 		
 	}
 	
-	private void scheduler(String s) {
-		String buffer = "empty";
-		while(!buffer.equals("NONE")) {
+	private void scheduler() {
+		String buffer = sendReceive("REDY");
+		
+		String largest = largestServer();
+		
+		while (!buffer.equals("NONE")) {
+			
+			String[] jobN = buffer.split(" ");//split job into parts
+			String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info
+			sendReceive("SCHD " + jobN[2] + " " + largest + " 0");
+
 			buffer = sendReceive("REDY");
-			if(buffer!="NONE") {
-				String[] jobN = buffer.split(" ");
-				
-			
-				String jobInfo = jobN[4]+"|" +jobN[5]+"|"+jobN[6];//save relevant info
-			
-				jobs.put(jobN[2],jobInfo);//save job as hashmap
-				sendReceive("SCHD " + jobN[2] + " 4xlarge 1");
-			} 
 		}
+		sendReceive("QUIT");
 	}
 	
 	
 	
-	private String checkServer(){
+	private String largestServer(){
+		int largestParameter = 0;
 		String largest = "";
 		String RCVD = "";
-		sendReceive("RESC All");
 		try {
-			RCVD = dInput.readLine();
+			out.write("RESC All\n".getBytes());
+			System.out.println("SENT: RESC All\nRCVD: \n");
+			
+			sendReceive("OK");
+			RCVD=dInput.readLine();
+			while(!RCVD.contains(".")) {
+				out.write("OK\n".getBytes());
+				//System.out.println(RCVD);
+
+				String[] server = RCVD.split(" ");
+				int diskSize = Integer.parseInt(server[5]);
+				if (diskSize>largestParameter) {
+					largestParameter = diskSize;
+					largest=server[0];
+				}
+				RCVD=dInput.readLine();		
+			}
+
+			return largest;
+
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
-		while(!RCVD.contains("ERR")) {
+		/*while(!RCVD.contains("ERR")) {
 			sendReceive(" ");
-			System.out.println(RCVD);
+			//System.out.println(RCVD);
 		
-		}
+		}*/
 		return largest;
 	}
 
