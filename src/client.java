@@ -40,30 +40,13 @@ public class client {
 		} catch (IOException i) {
 			System.out.println(i);
 		}
-
-		connect();
 		
-		// string to read message from input
-		String str1 = "";
-		String str2 = "";
+		
 
-		// keep reading until "Over" is input
-		while (!str1.equals("Over")) {
-			try {
-				str1 = input.readLine() + "\n";
-				out.write(str1.getBytes());
-				str2 = dInput.readLine();
+	}
 
-				System.out.println("Server: " + str2);
-				/*
-				 * if(input.readLine().equals("REDY")) { System.out.println(str2); }
-				 */
-			} catch (IOException i) {
-				System.out.println(i);
-			}
-		}
-
-		// close the connection
+	
+	private void disconnect() {
 		try {
 			input.close();
 			out.close();
@@ -73,11 +56,7 @@ public class client {
 		}
 	}
 
-	public static void main(String args[]) {
-		client client = new client("127.0.0.1", 8096);
-	}
-
-	public void connect() {
+	private void connect() {
 
 
 			sendReceive("HELO");
@@ -152,6 +131,13 @@ public class client {
 			System.out.println(i);
 			return "";
 		}
+	}
+	
+
+	public static void main(String args[]) {
+		client client = new client("127.0.0.1", 8096);
+		client.connect();
+		client.disconnect();
 	}
 	
 }
