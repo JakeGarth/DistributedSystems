@@ -9,40 +9,41 @@ public class client {
 	private DataInputStream input = null;
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
-
 	
+	private String address;
+	private int port;
 
-
+	// constructor for IP and Port
+	public client(String IP, int portNum) {
+		this.address = IP;
+		this.port = portNum;
+	}
 	
-
-	// constructor to put ip address and port
-	public client(String address, int port) {
-		System.out.println("# Client Started, attempting connection...");
-
-
-		// establish a connection
+	private void connect() {//connect and send intro strings
 		try {
+			System.out.println("# Client Started, attempting connection...");
 			socket = new Socket(address, port);
-			input = new DataInputStream(System.in);
-			dInput = new DataInputStream(socket.getInputStream());
+			dInput = new DataInputStream(socket.getInputStream());//input stream from socket (server)
+			out = new DataOutputStream(socket.getOutputStream()); //output to server (socket)
 			
-			System.out.println("# ...Connected");
-
-			// sends output to the socket
-			out = new DataOutputStream(socket.getOutputStream());
-
+			input = new DataInputStream(System.in);//not currently used, allows messages from console
+			
+			System.out.println("# ...Connected");//message confirmation of connection
 		} catch (UnknownHostException u) {
 			System.out.println(u);
 		} catch (IOException i) {
 			System.out.println(i);
 		}
-		this.connect();//connect client
-		this.disconnect();
+		
+			String user = System.getProperty("user.name");//get user profile for auth
+			sendReceive("HELO");
+			sendReceive("AUTH " + user);
 	}
-
 	
 	private void disconnect() {
+		sendReceive("QUIT");//send quit msg
 		try {
+			dInput.close();//close any remaining streams
 			input.close();
 			out.close();
 			socket.close();
@@ -50,64 +51,51 @@ public class client {
 			System.out.println(i);
 		}
 	}
-
-	private void connect() {
-			String user = System.getProperty("user.name");
-			sendReceive("HELO");
-			sendReceive("AUTH " + user);
-			scheduler();
-			sendReceive("QUIT");
-	}
 	
-	private void scheduler() {
+	private void runScheduler() {
 		String buffer = sendReceive("REDY");
+		String largest = largestServer();//find largest server
 		
-		String largest = largestServer();
-		
-		while (!buffer.equals("NONE")) {
+		while (!buffer.equals("NONE")) {//server sends NONE when out of jobs
 			
 			String[] jobN = buffer.split(" ");//split job into parts
-			String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info
-			sendReceive("SCHD " + jobN[2] + " " + largest + " 0");
-			buffer = sendReceive("REDY");
+			//String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
+			sendReceive("SCHD " + jobN[2] + " " + largest + " 0");//assign job to largest server
+			buffer = sendReceive("REDY");//ready for next job
 		}
-
 	}
 	
-	
-	
 	private String largestServer(){
-		int largestParameter = 0;
+		int largestParameter = 0;//parameter to check each server against
 		String largest = "";
 		String RCVD = "";
 		try {
-			out.write("RESC All\n".getBytes());
-			System.out.println("SENT: RESC All\nRCVD: \n");
+			out.write("RESC All\n".getBytes());//request all servers
+			System.out.println("SENT: RESC All\nRCVD: \n");//print
 			
 			sendReceive("OK");
 			RCVD=dInput.readLine();
 			while(!RCVD.contains(".")) {
-				out.write("OK\n".getBytes());
+				out.write("OK\n".getBytes());//send OK after each server response
 				//System.out.println(RCVD);
 
-				String[] server = RCVD.split(" ");
-				int cpuSize = Integer.parseInt(server[4]);
+				String[] server = RCVD.split(" ");//split response into parts
+				int cpuSize = Integer.parseInt(server[4]);//store CPU
 				if (cpuSize>largestParameter) {
-					largestParameter = cpuSize;
+					largestParameter = cpuSize; //if cpu is larger than prev largest, update prev largest
 					largest=server[0];
 				}
-				RCVD=dInput.readLine();		
+				RCVD=dInput.readLine();
 			}
 			return largest;		
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return("");
 		}
 	}
 
-	private String sendReceive(String s) {
+	private String sendReceive(String s) {//sends a message and prints it with the response from the server
 		try {
 			String send = s + "\n";
 			out.write(send.getBytes());
@@ -115,7 +103,7 @@ public class client {
 			String RCVD = dInput.readLine();
 			
 			System.out.print("SENT: " + s + "\n");
-			System.out.println("RCVD: " + RCVD + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");//extra newline included intentionally for legibility
 			
 			return RCVD;
 		} catch (IOException i) {
@@ -126,6 +114,9 @@ public class client {
 	
 	public static void main(String args[]) {
 		client client = new client("127.0.0.1", 8096);
+		client.connect();//send connection strings to server
+		client.runScheduler();//receive and allocate jobs
+		client.disconnect();//disconnect
 	}
 	
 }
