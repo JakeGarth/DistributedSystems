@@ -17,20 +17,16 @@ public class client {
 
 	// constructor to put ip address and port
 	public client(String address, int port) {
-		System.out.println("# ds-sim COMP335@MQ, s1, 2019");
-		System.out.println("# client Server started!");
-		System.out.println("# Connection Initiated...");
+		System.out.println("# Client Started, attempting connection...");
+
 
 		// establish a connection
 		try {
 			socket = new Socket(address, port);
-			System.out.println("# ...Connected");
-
-			// takes input from terminal
-
 			input = new DataInputStream(System.in);
-
 			dInput = new DataInputStream(socket.getInputStream());
+			
+			System.out.println("# ...Connected");
 
 			// sends output to the socket
 			out = new DataOutputStream(socket.getOutputStream());
@@ -40,9 +36,8 @@ public class client {
 		} catch (IOException i) {
 			System.out.println(i);
 		}
-		
-		
-
+		this.connect();//connect client
+		this.disconnect();
 	}
 
 	
@@ -57,7 +52,6 @@ public class client {
 	}
 
 	private void connect() {
-
 			String user = System.getProperty("user.name");
 			sendReceive("HELO");
 			sendReceive("AUTH " + user);
@@ -104,16 +98,13 @@ public class client {
 				}
 				RCVD=dInput.readLine();		
 			}
-
-			return largest;
-
+			return largest;		
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+			return("");
 		}
-		
-		return largest;
 	}
 
 	private String sendReceive(String s) {
@@ -133,11 +124,8 @@ public class client {
 		}
 	}
 	
-
 	public static void main(String args[]) {
 		client client = new client("127.0.0.1", 8096);
-		client.connect();
-		client.disconnect();
 	}
 	
 }
