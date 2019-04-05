@@ -58,9 +58,9 @@ public class client {
 
 	private void connect() {
 
-
+			String user = System.getProperty("user.name");
 			sendReceive("HELO");
-			sendReceive("AUTH Lewis");
+			sendReceive("AUTH " + user);
 			scheduler();
 			sendReceive("QUIT");
 	}
