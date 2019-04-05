@@ -83,11 +83,7 @@ public class client {
 			sendReceive("HELO");
 			sendReceive("AUTH Lewis");
 			scheduler();
-		    
-		    
-			//String largest = checkServer();
-			//scheduler(largest);
-		
+			sendReceive("QUIT");
 	}
 	
 	private void scheduler() {
@@ -100,10 +96,9 @@ public class client {
 			String[] jobN = buffer.split(" ");//split job into parts
 			String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info
 			sendReceive("SCHD " + jobN[2] + " " + largest + " 0");
-
 			buffer = sendReceive("REDY");
 		}
-		sendReceive("QUIT");
+
 	}
 	
 	
@@ -123,9 +118,9 @@ public class client {
 				//System.out.println(RCVD);
 
 				String[] server = RCVD.split(" ");
-				int diskSize = Integer.parseInt(server[5]);
-				if (diskSize>largestParameter) {
-					largestParameter = diskSize;
+				int cpuSize = Integer.parseInt(server[4]);
+				if (cpuSize>largestParameter) {
+					largestParameter = cpuSize;
 					largest=server[0];
 				}
 				RCVD=dInput.readLine();		
@@ -139,11 +134,6 @@ public class client {
 			e.printStackTrace();
 		}
 		
-		/*while(!RCVD.contains("ERR")) {
-			sendReceive(" ");
-			//System.out.println(RCVD);
-		
-		}*/
 		return largest;
 	}
 
@@ -151,13 +141,12 @@ public class client {
 		try {
 			String send = s + "\n";
 			out.write(send.getBytes());
-			String RCVD = dInput.readLine();	
 			
+			String RCVD = dInput.readLine();
 			
 			System.out.print("SENT: " + s + "\n");
 			System.out.println("RCVD: " + RCVD + "\n");
 			
-
 			return RCVD;
 		} catch (IOException i) {
 			System.out.println(i);
