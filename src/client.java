@@ -96,7 +96,7 @@ public class client {
 			
 			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
 
-			if (cpuSize > jobRequirement && serverState<3) {
+			if (cpuSize >= jobRequirement && serverState<3) {
 				serverID = server[0]+" "+server[1];
 				System.out.println(serverID);
 				while (!RCVD.contains(".")) {
