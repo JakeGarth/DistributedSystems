@@ -14,7 +14,7 @@ public class client {
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
 	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
-	
+
 
 	private String address;
 	private int port;
@@ -60,26 +60,27 @@ public class client {
 
 	private void runScheduler() {
 		String buffer = sendReceive("REDY");
-		
+
 
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
 
 			String[] jobN = buffer.split(" ");// split job into parts
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
-			String firstFit = firstFit(Integer.parseInt(jobN[3]));// find firstfit server
+			System.out.println("runScheduler cpu cores: "+jobN[4]);
+			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
 			
 			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to largest server
 			buffer = sendReceive("REDY");// ready for next job
 		}
 	}
-	
+
 	private String firstFit(int jobRequirement) {
 		String serverID = "";
 		String RCVD = "";
 
 		sendReceive("RESC All");//request 
 		sendReceive("OK");
-		
+
 		RCVD = sendReceive("OK");// receive "DATA"
 		RCVD = sendReceive("OK");// receive first string
 		while (!RCVD.contains(".")) {
@@ -89,25 +90,30 @@ public class client {
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]);// store CPU
 			int serverState = Integer.parseInt(server[2]);
+
+
+			//	String serverKey = server[0]+server[1];
+			//	serverMap.put(serverKey, cpuSize);
 			
-			
-		//	String serverKey = server[0]+server[1];
-		//	serverMap.put(serverKey, cpuSize);
-					
-			if (cpuSize > jobRequirement && serverState==0) {
-				
+			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
+
+			if (cpuSize > jobRequirement && serverState<3) {
 				serverID = server[0]+" "+server[1];
 				System.out.println(serverID);
-				//RCVD = sendReceive("OK");
+				while (!RCVD.contains(".")) {
+					RCVD = sendReceive("OK");
+					System.out.println("OK");
+					if (RCVD.contains(".")) {
+						break;
+					}
+				}
 				return serverID;
-				
-				
 			}
 			RCVD = sendReceive("OK");
 		}
 		return serverID;
 	}
-	
+
 
 	private String largestServer() {
 		int largestParameter = 0;// parameter to check each server against
@@ -116,7 +122,7 @@ public class client {
 
 		sendReceive("RESC All");//request 
 		sendReceive("OK");
-		
+
 		RCVD = sendReceive("OK");// receive "DATA"
 		RCVD = sendReceive("OK");// receive first string
 		while (!RCVD.contains(".")) {
@@ -155,7 +161,7 @@ public class client {
 	}
 
 	public static void main(String args[]) {
-	
+
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
 		client.runScheduler();// receive and allocate jobs
