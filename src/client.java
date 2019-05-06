@@ -78,14 +78,11 @@ public class client {
 		String RCVD = "";
 
 		sendReceive("RESC All");//request 
-		sendReceive("OK");
-
-		RCVD = sendReceive("OK");// receive "DATA"
-		RCVD = sendReceive("OK");// receive first string
+	
+		
+		
 		while (!RCVD.contains(".")) {
-			if (RCVD.contains(".")) {
-				break;
-			}
+			RCVD = sendReceive("OK");
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]);// store CPU
 			int serverState = Integer.parseInt(server[2]);
@@ -95,7 +92,7 @@ public class client {
 			//	serverMap.put(serverKey, cpuSize);
 			
 			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
-
+			
 			if (cpuSize >= jobRequirement && serverState<3) {
 				serverID = server[0]+" "+server[1];
 				System.out.println(serverID);
@@ -108,7 +105,7 @@ public class client {
 				}
 				return serverID;
 			}
-			RCVD = sendReceive("OK");
+		//	RCVD = sendReceive("OK");
 		}
 		return serverID;
 	}
