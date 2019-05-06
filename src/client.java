@@ -61,7 +61,6 @@ public class client {
 	private void runScheduler() {
 		String buffer = sendReceive("REDY");
 
-
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
 
 			String[] jobN = buffer.split(" ");// split job into parts
