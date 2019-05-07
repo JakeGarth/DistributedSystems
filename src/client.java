@@ -67,6 +67,7 @@ public class client {
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
 			System.out.println("runScheduler cpu cores: "+jobN[4]);
 			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
+			String bestFit = bestFit(Integer.parseInt(jobN[4])); // finds the best fit server
 			
 			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to largest server
 			buffer = sendReceive("REDY");// ready for next job
@@ -110,6 +111,49 @@ public class client {
 		return serverID;
 	}
 
+	private String bestFit(int jobRequirement) {
+		Integer bestFit = Integer.MAX_VALUE;
+		Integer minAva = Integer.MAX_VALUE;
+		String serverID = "";
+		String RCVD = "";
+
+		sendReceive("RESC All");
+		
+		while (!RCVD.contains(".")) {
+			RCVD = sendReceive("OK");
+			String[] server = RCVD.split(" ");// split response into parts
+			int cpuSize = Integer.parseInt(server[4]);// store CPU
+			int serverState = Integer.parseInt(server[2]);
+			int serverAvaiTime = Integer.parseInt(server[3]);
+
+
+			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
+			
+			if (cpuSize >= jobRequirement && serverState<4) {
+				int fitnessValue = cpuSize - jobRequirement;
+				if ((fitnessValue < bestFit) || (fitnessValue == bestFit && minAva > serverAvaiTime)) {
+					bestFit = fitnessValue;
+					minAva = serverAvaiTime;
+					serverID = server[0] + "" +server[1];
+				}
+				System.out.println(serverID);
+				while (!RCVD.contains(".")) {
+					RCVD = sendReceive("OK");
+					System.out.println("OK");
+					if (RCVD.contains(".")) {
+						break;
+					}
+				}
+				return serverID;
+			}
+			
+			
+		}
+		
+		
+		return serverID;
+		
+	}
 
 	private String largestServer() {
 		int largestParameter = 0;// parameter to check each server against
