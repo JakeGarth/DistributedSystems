@@ -58,7 +58,7 @@ public class client {
 		}
 	}
 
-	private void runScheduler() {
+	private void runScheduler() { //
 		String buffer = sendReceive("REDY");
 
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
@@ -66,9 +66,11 @@ public class client {
 			String[] jobN = buffer.split(" ");// split job into parts
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
 			System.out.println("runScheduler cpu cores: "+jobN[4]);
+			
+			
 			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
 			
-			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to largest server
+			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to first fit server
 			buffer = sendReceive("REDY");// ready for next job
 		}
 	}
@@ -111,6 +113,40 @@ public class client {
 	}
 
 
+
+
+	private String sendReceive(String s) {// sends a message and prints it with the response from the server
+		try {
+			String send = s + "\n";
+			out.write(send.getBytes());
+
+			String RCVD = dInput.readLine();
+
+			System.out.print("SENT: " + s + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");// extra newline included intentionally for legibility
+
+			return RCVD;
+		} catch (IOException i) {
+			System.out.println(i);
+			return "";
+		}
+	}
+
+	public static void main(String args[]) {
+
+		client client = new client("127.0.0.1", 8096);
+		client.connect();// send connection strings to server
+		
+		client.runScheduler();// receive and allocate jobs
+		client.disconnect();// disconnect
+	}
+	
+	
+	
+	
+	
+	
+	/*
 	private String largestServer() {
 		int largestParameter = 0;// parameter to check each server against
 		String largest = "";
@@ -138,29 +174,5 @@ public class client {
 		}
 		return largest;
 	}
-
-	private String sendReceive(String s) {// sends a message and prints it with the response from the server
-		try {
-			String send = s + "\n";
-			out.write(send.getBytes());
-
-			String RCVD = dInput.readLine();
-
-			System.out.print("SENT: " + s + "\n");
-			System.out.println("RCVD: " + RCVD + "\n");// extra newline included intentionally for legibility
-
-			return RCVD;
-		} catch (IOException i) {
-			System.out.println(i);
-			return "";
-		}
-	}
-
-	public static void main(String args[]) {
-
-		client client = new client("127.0.0.1", 8096);
-		client.connect();// send connection strings to server
-		client.runScheduler();// receive and allocate jobs
-		client.disconnect();// disconnect
-	}
+	*/
 }
