@@ -75,6 +75,7 @@ public class client {
 		}
 	}
 
+	
 	private String firstFit(int jobRequirement) {
 		String serverID = "";
 		String RCVD = "";
