@@ -13,11 +13,10 @@ public class client {
 	private DataInputStream input = null;
 	private DataOutputStream out = null;
 	private DataInputStream dInput = null;
-	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
-
-
 	private String address;
 	private int port;
+	private int sortingArr[] = null;
+	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
 
 	// constructor for IP and Port
 	public client(String IP, int portNum) {
@@ -65,13 +64,15 @@ public class client {
 
 			String[] jobN = buffer.split(" ");// split job into parts
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
-			System.out.println("runScheduler cpu cores: "+jobN[4]);
+			//System.out.println("runScheduler cpu cores: "+jobN[4]);
 			
-			
+			//if(Integer.parseInt(jobN[2])<159) {
 			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
 			
 			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to first fit server
 			buffer = sendReceive("REDY");// ready for next job
+			
+			//}
 		}
 	}
 
@@ -79,42 +80,41 @@ public class client {
 	private String firstFit(int jobRequirement) {
 		String serverID = "";
 		String RCVD = "";
-
-		sendReceive("RESC All");//request 
-	
-		
+		sendReceive("RESC All");//request
+		RCVD = sendReceive("OK");
+		int smallest = 99999;
 		
 		while (!RCVD.contains(".")) {
-			RCVD = sendReceive("OK");
+			
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]);// store CPU
 			int serverState = Integer.parseInt(server[2]);
-
-
-			//	String serverKey = server[0]+server[1];
-			//	serverMap.put(serverKey, cpuSize);
 			
 			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
 			
-			if (cpuSize >= jobRequirement && serverState<4) {
+			if (cpuSize >= jobRequirement && cpuSize == serverMap.get(server[0]) &&smallest>cpuSize && serverState<4) {
 				serverID = server[0]+" "+server[1];
-				System.out.println(serverID);
-				while (!RCVD.contains(".")) {
-					RCVD = sendReceive("OK");
-					System.out.println("OK");
-					if (RCVD.contains(".")) {
-						break;
-					}
-				}
-				return serverID;
+				System.out.println("smallest: "+smallest);
+				System.out.println("server: "+serverID);
+				System.out.println("CPU Size: "+cpuSize);
+				System.out.println("CPU's Required: "+jobRequirement);
+				
+				
+				
+				smallest = cpuSize;
+				
+				System.out.println("smallest: "+smallest);
 			}
-		//	RCVD = sendReceive("OK");
+			
+			
+			
+			RCVD = sendReceive("OK");
+			
 		}
+		
 		return serverID;
 	}
-
-
-
+	
 
 	private String sendReceive(String s) {// sends a message and prints it with the response from the server
 		try {
@@ -132,48 +132,35 @@ public class client {
 			return "";
 		}
 	}
+	
+
+	
+	private void orderRescources() {
+		
+		
+		String buffer = sendReceive("REDY");
+		String RCVD = "";
+		sendReceive("RESC All");//request
+		RCVD = sendReceive("OK");
+		
+		while (!RCVD.contains(".")) {
+			String[] server = RCVD.split(" ");
+			
+			int cpuSize = Integer.parseInt(server[4]);
+			String serverName = server[0];
+			RCVD = sendReceive("OK");
+			serverMap.put(serverName, cpuSize);
+		} 
+		
+		
+	}
 
 	public static void main(String args[]) {
 
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
-		
+		client.orderRescources();
 		client.runScheduler();// receive and allocate jobs
 		client.disconnect();// disconnect
 	}
-	
-	
-	
-	
-	
-	
-	/*
-	private String largestServer() {
-		int largestParameter = 0;// parameter to check each server against
-		String largest = "";
-		String RCVD = "";
-
-		sendReceive("RESC All");//request 
-		sendReceive("OK");
-
-		RCVD = sendReceive("OK");// receive "DATA"
-		RCVD = sendReceive("OK");// receive first string
-		while (!RCVD.contains(".")) {
-
-			// System.out.println(RCVD);
-			if (RCVD.contains(".")) {
-				break;
-			}
-			String[] server = RCVD.split(" ");// split response into parts
-			int cpuSize = Integer.parseInt(server[4]);// store CPU
-			if (cpuSize > largestParameter) {
-				largestParameter = cpuSize; // if cpu is larger than prev largest, update prev largest
-				largest = server[0];
-			}
-			RCVD = sendReceive("OK");
-
-		}
-		return largest;
-	}
-	*/
 }
