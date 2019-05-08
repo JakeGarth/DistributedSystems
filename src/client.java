@@ -66,10 +66,9 @@ public class client {
 			String[] jobN = buffer.split(" ");// split job into parts
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
 			System.out.println("runScheduler cpu cores: "+jobN[4]);
-			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
 			String bestFit = bestFit(Integer.parseInt(jobN[4])); // finds the best fit server
 			
-			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to largest server
+			sendReceive("SCHD " + jobN[2] + " " + bestFit);// assign job to largest server
 			buffer = sendReceive("REDY");// ready for next job
 		}
 	}
@@ -130,11 +129,11 @@ public class client {
 			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
 			
 			if (cpuSize >= jobRequirement && serverState<4) {
-				int fitnessValue = cpuSize - jobRequirement;
+				int fitnessValue = jobRequirement - cpuSize  ;
 				if ((fitnessValue < bestFit) || (fitnessValue == bestFit && minAva > serverAvaiTime)) {
 					bestFit = fitnessValue;
 					minAva = serverAvaiTime;
-					serverID = server[0] + "" +server[1];
+					serverID = server[0] + " " +server[1];
 				}
 				System.out.println(serverID);
 				while (!RCVD.contains(".")) {
