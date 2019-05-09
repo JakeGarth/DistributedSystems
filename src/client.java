@@ -108,8 +108,8 @@ public class client {
 			String send = s + "\n";
 			out.write(send.getBytes());
 			String RCVD = dInput.readLine();
-			 System.out.print("SENT: " + s + "\n");
-			 System.out.println("RCVD: " + RCVD + "\n");// extra newline included
+			System.out.print("SENT: " + s + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");// extra newline included
 			// intentionally for legibility
 			return RCVD;
 		} catch (IOException i) {
@@ -149,23 +149,23 @@ public class client {
 			 * +" smallest: "+ smallest +" Server State: "+serverState);
 			 * System.out.println("changed: "+changed);
 			 */ if (cpuSize >= jobRequirement && smallest > cpuSize && serverState < 4) {
-				if (cpuSize < serverMap.get(server[0]) && changed == true) {
+				 if (cpuSize < serverMap.get(server[0]) && changed == true) {
 
-				} else {
-					serverID = server[0] + " " + server[1];
-					changed = true;
-					/*
-					 * System.out.println("smallest: "+smallest);
-					 * System.out.println("server: "+serverID);
-					 * System.out.println("CPU Size: "+cpuSize);
-					 * System.out.println("CPU's Required: "+jobRequirement);
-					 */ smallest = serverMap.get(server[0]);
+				 } else {
+					 serverID = server[0] + " " + server[1];
+					 changed = true;
+					 /*
+					  * System.out.println("smallest: "+smallest);
+					  * System.out.println("server: "+serverID);
+					  * System.out.println("CPU Size: "+cpuSize);
+					  * System.out.println("CPU's Required: "+jobRequirement);
+					  */ smallest = serverMap.get(server[0]);
 
-					// System.out.println("smallest: "+smallest);
-				}
-			}
+					  // System.out.println("smallest: "+smallest);
+				 }
+			 }
 
-			RCVD = sendReceive("OK");
+			 RCVD = sendReceive("OK");
 
 		}
 		if (serverID == "") {
@@ -243,7 +243,51 @@ public class client {
 	}
 
 	private String bestFit(int jobReq) {
-		return "";
+		int bestFit = 10000;
+		int minAva = 10000;
+		String serverID = "";
+		String bestID = "";
+		String bestType = "";
+
+
+		sendReceive("RESC All");
+		String RCVD = sendReceive("OK");
+
+		while (!RCVD.contains(".")) {
+
+			String[] server = RCVD.split(" ");// split response into parts
+			int cpuSize = Integer.parseInt(server[4]); //store CPU
+			int serverState = Integer.parseInt(server[2]); //store server's state
+			int serverAvaiTime = Integer.parseInt(server[3]); //store server's available time
+
+
+			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobReq+" Server State: "+serverState);
+
+			int fitnessValue = cpuSize - jobReq;
+
+			if ( cpuSize >= jobReq && serverState < 4) {
+
+				if ((fitnessValue < bestFit) || (fitnessValue == bestFit && minAva > serverAvaiTime)) {
+					bestFit = fitnessValue;
+					minAva = serverAvaiTime;
+					bestID = server[0];
+					bestType = 	server[1];
+				}
+				else {
+					serverID = server[0] + " " +server[1];
+				}
+			}
+			RCVD = sendReceive("OK");
+		}
+
+		if (bestFit != 10000) { //checks if bestFit is available
+			return bestID + " " + bestType;
+		}
+		else {
+			return serverID;
+
+		}
+
 	}
 
 	public static void main(String args[]) {
