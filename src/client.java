@@ -77,31 +77,24 @@ public class client {
 	}
 
 	private void runScheduler(String alg) { //
-		if(alg.compareTo("ff")!=0||alg.compareTo("bf")!=0||alg.compareTo("wf")!=0) {
+		if(alg.compareTo("ff")!=0&&alg.compareTo("bf")!=0&&alg.compareTo("wf")!=0) {
+			System.out.println("No algorithm argument");
 			return;
 		}
-		
 		
 		String buffer = sendReceive("REDY");
 		String serverChoice = null;
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
-
 			String[] jobN = buffer.split(" ");// split job into parts
-			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
-			//System.out.println("runScheduler cpu cores: "+jobN[4]);
 			
-
-
-			switch(alg) {
-				case "ff": serverChoice = firstFit(Integer.parseInt(jobN[4]));
-				case "wf": serverChoice = worstFit(Integer.parseInt(jobN[4]));
-				case "bf": serverChoice = bestFit(Integer.parseInt(jobN[4]));
+			switch(alg) {//check argument case
+				case "ff": serverChoice = firstFit(Integer.parseInt(jobN[4])); break;
+				case "wf": serverChoice = worstFit(Integer.parseInt(jobN[4])); break;
+				case "bf": serverChoice = bestFit(Integer.parseInt(jobN[4])); break;
 			}
-			
+			serverChoice = firstFit(Integer.parseInt(jobN[4]));
 			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to first fit server
 			buffer = sendReceive("REDY");// ready for next job
-			
-
 		}
 	}
 
@@ -205,10 +198,10 @@ public class client {
 	}
 	
 	public static void main(String args[]) {
-		String argument = checkAlgorithm(args);//look through args for algorithm selector
+		//String argument = checkAlgorithm(args);//look through args for algorithm selector
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
-		client.runScheduler(argument);// run scheduler WITH arguments considered
+		client.runScheduler("ff");// run scheduler WITH arguments considered
 		client.disconnect();// disconnect
 	}
 }
