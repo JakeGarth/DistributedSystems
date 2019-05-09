@@ -66,13 +66,13 @@ public class client {
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
 			//System.out.println("runScheduler cpu cores: "+jobN[4]);
 			
-			//if(Integer.parseInt(jobN[2])<159) {
+		//	if(Integer.parseInt(jobN[2])<250) {
 			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
 			
 			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to first fit server
 			buffer = sendReceive("REDY");// ready for next job
 			
-			//}
+		//	}
 		}
 	}
 
@@ -80,6 +80,7 @@ public class client {
 	private String firstFit(int jobRequirement) {
 		String serverID = "";
 		String RCVD = "";
+		boolean changed = false;
 		sendReceive("RESC All");//request
 		RCVD = sendReceive("OK");
 		int smallest = 99999;
@@ -89,21 +90,24 @@ public class client {
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]);// store CPU
 			int serverState = Integer.parseInt(server[2]);
-			
+	/*		
 			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement+" Server State: "+serverState);
-			
-			if (cpuSize >= jobRequirement && cpuSize == serverMap.get(server[0]) &&smallest>cpuSize && serverState<4) {
+			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobRequirement +" smallest: "+ smallest +" Server State: "+serverState);
+			System.out.println("changed: "+changed);
+	*/		if (cpuSize >= jobRequirement && smallest>cpuSize && serverState<4) {
+				if(cpuSize<serverMap.get(server[0]) && changed == true) {
+					
+				}else {
 				serverID = server[0]+" "+server[1];
-				System.out.println("smallest: "+smallest);
+				changed = true;
+	/*		System.out.println("smallest: "+smallest);
 				System.out.println("server: "+serverID);
 				System.out.println("CPU Size: "+cpuSize);
-				System.out.println("CPU's Required: "+jobRequirement);
+				System.out.println("CPU's Required: "+jobRequirement); 
+		*/		smallest = serverMap.get(server[0]);
 				
-				
-				
-				smallest = cpuSize;
-				
-				System.out.println("smallest: "+smallest);
+		//		System.out.println("smallest: "+smallest);
+				}
 			}
 			
 			
@@ -111,7 +115,25 @@ public class client {
 			RCVD = sendReceive("OK");
 			
 		}
-		
+	if(serverID == "") {
+			int smallestInitial = 9999999;
+			String smallestServer = "";
+			for (HashMap.Entry<String, Integer> entry : serverMap.entrySet()) {
+			    String key = entry.getKey();
+			    Integer value = entry.getValue();
+			   
+			    if(jobRequirement<value && value<smallestInitial) {
+			    	smallestInitial = value;
+			    	smallestServer = key+ " 0";
+			    }
+			    
+			    if(jobRequirement == value) {
+			    	smallestServer = key+" 0";
+			    	break;
+			    }
+			}
+			serverID = smallestServer;
+		} 
 		return serverID;
 	}
 	
