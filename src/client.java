@@ -15,7 +15,6 @@ public class client {
 	private DataInputStream dInput = null;
 	private String address;
 	private int port;
-	private int sortingArr[] = null;
 	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
 
 	// constructor for IP and Port
@@ -61,7 +60,7 @@ public class client {
 	}
 	
 	private void populateServerList() {//Request all servers and order from largest to smallest
-		String buffer = sendReceive("REDY");//pretend ready so we can receive info
+		sendReceive("REDY");//pretend ready so we can receive info
 		String RCVD = "";
 		sendReceive("RESC All");
 		RCVD = sendReceive("OK");
@@ -77,25 +76,62 @@ public class client {
 		} 
 	}
 
-	private void runScheduler() { //
+	private void runScheduler(String alg) { //
+		if(alg.compareTo("ff")!=0||alg.compareTo("bf")!=0||alg.compareTo("wf")!=0) {
+			return;
+		}
+		
+		
 		String buffer = sendReceive("REDY");
-
+		String serverChoice = null;
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
 
 			String[] jobN = buffer.split(" ");// split job into parts
 			// String jobInfo = jobN[4] + "|" + jobN[5] + "|" + jobN[6];// save relevant info (potentially useful for next task)
 			//System.out.println("runScheduler cpu cores: "+jobN[4]);
 			
-		//	if(Integer.parseInt(jobN[2])<250) {
-			String firstFit = firstFit(Integer.parseInt(jobN[4]));// find firstfit server
+
+
+			switch(alg) {
+				case "ff": serverChoice = firstFit(Integer.parseInt(jobN[4]));
+				case "wf": serverChoice = worstFit(Integer.parseInt(jobN[4]));
+				case "bf": serverChoice = bestFit(Integer.parseInt(jobN[4]));
+			}
 			
-			sendReceive("SCHD " + jobN[2] + " " + firstFit);// assign job to first fit server
+			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to first fit server
 			buffer = sendReceive("REDY");// ready for next job
 			
-		//	}
+
 		}
 	}
 
+	private String sendReceive(String s) {// sends a message and prints it with the response from the server
+		try {
+			String send = s + "\n";
+			out.write(send.getBytes());
+
+			String RCVD = dInput.readLine();
+
+			System.out.print("SENT: " + s + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");// extra newline included intentionally for legibility
+
+			return RCVD;
+		} catch (IOException i) {
+			System.out.println(i);
+			return "";
+		}
+	}
+	
+	private static String checkAlgorithm(String str[]) {
+		if(str.length>1) {
+			for(int i=1;i<str.length;i++) {
+				if(str[i].compareTo("-a")==0 && str[i+1]!=null) {
+					return str[i+1];
+				}
+			}
+		}
+		return "";
+	}
 	
 	private String firstFit(int jobRequirement) {
 		String serverID = "";
@@ -157,28 +193,22 @@ public class client {
 		return serverID;
 	}
 	
-	private String sendReceive(String s) {// sends a message and prints it with the response from the server
-		try {
-			String send = s + "\n";
-			out.write(send.getBytes());
-
-			String RCVD = dInput.readLine();
-
-			System.out.print("SENT: " + s + "\n");
-			System.out.println("RCVD: " + RCVD + "\n");// extra newline included intentionally for legibility
-
-			return RCVD;
-		} catch (IOException i) {
-			System.out.println(i);
-			return "";
-		}
+	private String worstFit(int jobReq) {
+		
+		return "";
+		
+	}
+	
+	private String bestFit(int jobReq) {
+		
+		return "";
 	}
 	
 	public static void main(String args[]) {
-
+		String argument = checkAlgorithm(args);//look through args for algorithm selector
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
-		//client.runScheduler();// receive and allocate jobs
+		client.runScheduler(argument);// run scheduler WITH arguments considered
 		client.disconnect();// disconnect
 	}
 }
