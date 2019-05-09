@@ -111,17 +111,17 @@ public class client {
 	}
 
 	private String bestFit(int jobRequirement) {
-		Integer bestFit = 10000;
-		Integer minAva = 10000;
+		int bestFit = 10000;
+		int minAva = 10000;
 		String serverID = "";
 		String bestID = "";
 		String bestType = "";
-		String RCVD = "";
+		
 
 		sendReceive("RESC All");
-		
+		String RCVD = sendReceive("OK");
 		while (!RCVD.contains(".")) {
-			RCVD = sendReceive("OK");
+			
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]); //store CPU
 			int serverState = Integer.parseInt(server[2]);
@@ -145,17 +145,10 @@ public class client {
 					serverID = server[0] + " " +server[1];
 				}
 				System.out.println(serverID + ' '+ bestFit);
-				while (!RCVD.contains(".")) {
-					RCVD = sendReceive("OK");
-					System.out.println("OK");
-					if (RCVD.contains(".")) {
-						break;
-					}
-				}
-				//return serverID;
+				
 			}
 			
-			
+			RCVD = sendReceive("OK");
 		}
 		
 		if (bestFit != 10000) {
