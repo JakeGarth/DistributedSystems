@@ -43,6 +43,9 @@ public class client {
 		String user = System.getProperty("user.name");// get user profile for auth
 		sendReceive("HELO");
 		sendReceive("AUTH " + user);
+		sendReceive("REDY");
+		populateServerList();
+		
 	}
 
 	private void disconnect() {
@@ -55,6 +58,23 @@ public class client {
 		} catch (IOException i) {
 			System.out.println(i);
 		}
+	}
+	
+	private void populateServerList() {//Request all servers and order from largest to smallest
+		String buffer = sendReceive("REDY");//pretend ready so we can receive info
+		String RCVD = "";
+		sendReceive("RESC All");
+		RCVD = sendReceive("OK");
+		
+		while (!RCVD.contains(".")) {
+			String[] server = RCVD.split(" ");
+			
+			int cpuSize = Integer.parseInt(server[4]);
+			String serverName = server[0];
+			System.out.println(serverName + "--");
+			RCVD = sendReceive("OK");
+			serverMap.put(serverName, cpuSize);//list of all servers by CPUsize
+		} 
 	}
 
 	private void runScheduler() { //
@@ -137,7 +157,6 @@ public class client {
 		return serverID;
 	}
 	
-
 	private String sendReceive(String s) {// sends a message and prints it with the response from the server
 		try {
 			String send = s + "\n";
@@ -155,34 +174,11 @@ public class client {
 		}
 	}
 	
-
-	
-	private void orderRescources() {
-		
-		
-		String buffer = sendReceive("REDY");
-		String RCVD = "";
-		sendReceive("RESC All");//request
-		RCVD = sendReceive("OK");
-		
-		while (!RCVD.contains(".")) {
-			String[] server = RCVD.split(" ");
-			
-			int cpuSize = Integer.parseInt(server[4]);
-			String serverName = server[0];
-			RCVD = sendReceive("OK");
-			serverMap.put(serverName, cpuSize);
-		} 
-		
-		
-	}
-
 	public static void main(String args[]) {
 
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
-		client.orderRescources();
-		client.runScheduler();// receive and allocate jobs
+		//client.runScheduler();// receive and allocate jobs
 		client.disconnect();// disconnect
 	}
 }
