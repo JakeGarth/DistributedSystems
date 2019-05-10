@@ -16,7 +16,8 @@ public class client {
 	private String address;
 	private int port;
 	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
-
+	private String largestServer = "";
+	
 	// constructor for IP and Port
 	public client(String IP, int portNum) {
 		this.address = IP;
@@ -30,7 +31,7 @@ public class client {
 			dInput = new DataInputStream(socket.getInputStream());// input stream from socket (server)
 			out = new DataOutputStream(socket.getOutputStream()); // output to server (socket)
 
-			input = new DataInputStream(System.in);// not currently used, allows messages from console
+			//input = new DataInputStream(System.in);// not currently used, allows messages from console
 
 			System.out.println("# ...Connected");// message confirmation of connection
 		} catch (UnknownHostException u) {
@@ -51,7 +52,7 @@ public class client {
 		sendReceive("QUIT");// send quit msg
 		try {
 			dInput.close();// close any remaining streams
-			input.close();
+			//input.close();
 			out.close();
 			socket.close();
 		} catch (IOException i) {
@@ -64,6 +65,7 @@ public class client {
 		String RCVD = "";
 		sendReceive("RESC All");
 		RCVD = sendReceive("OK");
+		int prevLargestCPU = -1;
 
 		while (!RCVD.contains(".")) {
 			String[] server = RCVD.split(" ");
@@ -72,6 +74,10 @@ public class client {
 			String serverName = server[0];
 			RCVD = sendReceive("OK");
 			serverMap.put(serverName, cpuSize);// list of all servers by CPUsize
+			if(cpuSize>prevLargestCPU) {
+				prevLargestCPU = cpuSize;
+				largestServer = server[0] + " " + server[1];
+			}
 		}
 	}
 
@@ -94,13 +100,13 @@ public class client {
 				serverChoice = firstFit(cpuREQ);
 				break;
 			case "wf":
-				serverChoice = worstFit(cpuREQ, memREQ,diskREQ);
+				serverChoice = worstFit(cpuREQ, memREQ, diskREQ);
 				break;
 			case "bf":
 				serverChoice = bestFit(cpuREQ);
 				break;
 			}
-			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to first fit server
+			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to  server based on alg
 			buffer = sendReceive("REDY");// ready for next job
 		}
 	}
@@ -111,7 +117,7 @@ public class client {
 			out.write(send.getBytes());
 			String RCVD = dInput.readLine();
 			System.out.print("SENT: " + s + "\n");
-			System.out.println("RCVD: " + RCVD + "\n");// extra newline included
+			System.out.println("RCVD: " + RCVD );// extra newline included
 			// intentionally for legibility
 			return RCVD;
 		} catch (IOException i) {
@@ -151,23 +157,23 @@ public class client {
 			 * +" smallest: "+ smallest +" Server State: "+serverState);
 			 * System.out.println("changed: "+changed);
 			 */ if (cpuSize >= jobRequirement && smallest > cpuSize && serverState < 4) {
-				 if (cpuSize < serverMap.get(server[0]) && changed == true) {
+				if (cpuSize < serverMap.get(server[0]) && changed == true) {
 
-				 } else {
-					 serverID = server[0] + " " + server[1];
-					 changed = true;
-					 /*
-					  * System.out.println("smallest: "+smallest);
-					  * System.out.println("server: "+serverID);
-					  * System.out.println("CPU Size: "+cpuSize);
-					  * System.out.println("CPU's Required: "+jobRequirement);
-					  */ smallest = serverMap.get(server[0]);
+				} else {
+					serverID = server[0] + " " + server[1];
+					changed = true;
+					/*
+					 * System.out.println("smallest: "+smallest);
+					 * System.out.println("server: "+serverID);
+					 * System.out.println("CPU Size: "+cpuSize);
+					 * System.out.println("CPU's Required: "+jobRequirement);
+					 */ smallest = serverMap.get(server[0]);
 
-					  // System.out.println("smallest: "+smallest);
-				 }
-			 }
+					// System.out.println("smallest: "+smallest);
+				}
+			}
 
-			 RCVD = sendReceive("OK");
+			RCVD = sendReceive("OK");
 
 		}
 		if (serverID == "") {
@@ -192,26 +198,26 @@ public class client {
 		return serverID;
 	}
 
-	private String worstFit( int cpuREQ, int memREQ, int diskREQ) {
+	private String worstFit(int cpuREQ, int memREQ, int diskREQ) {
 		int worstFit = -1;
 		int altFit = -1;
-		int worstWorstFit = -1;
 		String worstFitType = "";
 		String altFitType = "";
-		String worstWorstType = "";
 		String worstFitID = "";
 		String altFitID = "";
+		int worstWorstCPU = -1;
 		String worstWorstID = "";
-
-		String RCVD = "";
-
+		String worstWorstType = "";
+		
+		//sendReceive("RESC Avail" + " " + cpuREQ + " " + memREQ + " " + diskREQ);
 		sendReceive("RESC All");
-		RCVD = sendReceive("OK");
+		String RCVD = sendReceive("OK");
 
 		while (!RCVD.contains(".")) {
 			String[] server = RCVD.split(" ");// split response into parts
 			int serverState = Integer.parseInt(server[2]); // server availability
 			int cpuSize = Integer.parseInt(server[4]); // CPU Size
+
 			int fitness = cpuSize - cpuREQ;
 
 			if (serverState != 1 && serverState != 4) {
@@ -219,19 +225,16 @@ public class client {
 					worstFit = fitness;
 					worstFitID = server[1];
 					worstFitType = server[0];
-				} else if (altFit > fitness) {
+				} else if (fitness > altFit) {
 					altFit = fitness;
 					altFitID = server[1];
 					altFitType = server[0];
 				}
 			}
-			if (fitness > worstWorstFit) {
-				worstWorstFit = fitness;
-				worstWorstType = server[0];
-				worstWorstID = server[1];
-			}
+
 			RCVD = sendReceive("OK");
 		}
+		
 		if (worstFit > -1) {
 			System.out.println("WORSTFIT");
 			return worstFitType + " " + worstFitID;
@@ -239,7 +242,24 @@ public class client {
 			System.out.println("ALTFIT!");
 			return altFitType + " " + altFitID;
 		}
-		return worstWorstType + " " + worstWorstID;
+		
+		/*sendReceive("RESC All");
+		RCVD = sendReceive("OK");
+		while(!RCVD.contains(".")) {
+			String[] server = RCVD.split(" ");// split response into parts
+			int serverState = Integer.parseInt(server[2]); // server availability
+			int cpuSize = Integer.parseInt(server[4]); // CPU Size
+			
+			if(cpuREQ>=cpuSize&&cpuSize>worstWorstCPU&&serverState==3) {
+				worstWorstCPU = cpuSize;
+				worstWorstID = server[1];
+				worstWorstType = server[0];
+			}
+			RCVD = sendReceive("OK");
+		}
+		
+		System.out.println("WORSTWORSTFIT");*/
+		return largestServer;
 	}
 
 	private String bestFit(int jobReq) {
@@ -249,41 +269,37 @@ public class client {
 		String bestID = "";
 		String bestType = "";
 
-
 		sendReceive("RESC All");
 		String RCVD = sendReceive("OK");
 
 		while (!RCVD.contains(".")) {
 
 			String[] server = RCVD.split(" ");// split response into parts
-			int cpuSize = Integer.parseInt(server[4]); //store CPU
-			int serverState = Integer.parseInt(server[2]); //store server's state
-			int serverAvaiTime = Integer.parseInt(server[3]); //store server's available time
+			int cpuSize = Integer.parseInt(server[4]); // store CPU
+			int serverState = Integer.parseInt(server[2]); // store server's state
+			int serverAvaiTime = Integer.parseInt(server[3]); // store server's available time
 
-
-			System.out.println("CPU size "+cpuSize+" Job Requirement: "+jobReq+" Server State: "+serverState);
+			System.out.println("CPU size " + cpuSize + " Job Requirement: " + jobReq + " Server State: " + serverState);
 
 			int fitnessValue = cpuSize - jobReq;
 
-			if ( cpuSize >= jobReq && serverState < 4) {
+			if (cpuSize >= jobReq && serverState < 4) {
 
 				if ((fitnessValue < bestFit) || (fitnessValue == bestFit && minAva > serverAvaiTime)) {
 					bestFit = fitnessValue;
 					minAva = serverAvaiTime;
 					bestID = server[0];
-					bestType = 	server[1];
-				}
-				else {
-					serverID = server[0] + " " +server[1];
+					bestType = server[1];
+				} else {
+					serverID = server[0] + " " + server[1];
 				}
 			}
 			RCVD = sendReceive("OK");
 		}
 
-		if (bestFit != 10000) { //checks if bestFit is available
+		if (bestFit != 10000) { // checks if bestFit is available
 			return bestID + " " + bestType;
-		}
-		else {
+		} else {
 			return serverID;
 
 		}
