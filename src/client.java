@@ -82,12 +82,7 @@ public class client {
 		}
 	}
 
-	private void runScheduler(String alg) { //
-		if (alg.compareTo("ff") != 0 && alg.compareTo("bf") != 0 && alg.compareTo("wf") != 0) {
-			System.out.println("No algorithm argument");
-			return;
-		}
-
+	private void runScheduler(String alg) { 
 		String buffer = sendReceive("REDY");
 		String serverChoice = null;
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
@@ -157,7 +152,6 @@ public class client {
 
 			if (cpuSize >= jobRequirement && smallest > cpuSize && serverState < 4) {
 				if (cpuSize < serverMap.get(server[0]) && changed == true && smallest <= serverMap.get(server[0])) {
-
 				} else {
 					serverID = server[0] + " " + server[1];
 					changed = true;
@@ -177,7 +171,6 @@ public class client {
 					smallestInitial = value;
 					smallestServer = key + " 0";
 				}
-
 				if (jobRequirement == value) {
 					smallestServer = key + " 0";
 					break;
@@ -198,12 +191,10 @@ public class client {
 
 		sendReceive("RESC All");
 		String RCVD = sendReceive("OK");
-
 		while (!RCVD.contains(".")) {
 			String[] server = RCVD.split(" ");// split response into parts
 			int serverState = Integer.parseInt(server[2]); // server availability
 			int cpuSize = Integer.parseInt(server[4]); // CPU Size
-
 			int fitness = cpuSize - cpuREQ;
 
 			if (serverState != 1 && serverState != 4) {
@@ -217,10 +208,8 @@ public class client {
 					altFitType = server[0];
 				}
 			}
-
 			RCVD = sendReceive("OK");
 		}
-
 		if (worstFit > -1) {
 			return worstFitType + " " + worstFitID;
 		} else if (altFit > -1) {
@@ -240,7 +229,6 @@ public class client {
 		String RCVD = sendReceive("OK");
 
 		while (!RCVD.contains(".")) {
-
 			String[] server = RCVD.split(" ");// split response into parts
 			int cpuSize = Integer.parseInt(server[4]); // store CPU
 			int serverState = Integer.parseInt(server[2]); // store server's state
@@ -263,19 +251,15 @@ public class client {
 			}
 			RCVD = sendReceive("OK");
 		}
-
 		if (bestFit != 10000) { // checks if bestFit is available
 			return bestID + " " + bestType;
 		} else {
 			return serverID;
 		}
-
 	}
 
 	public static void main(String args[]) {
 		String argument = checkAlgorithm(args);// look through args for algorithm selector
-		for(int i=0;i<args.length;i++)
-			System.out.println(args[i]);
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
 		client.runScheduler(argument);// run scheduler WITH arguments considered
