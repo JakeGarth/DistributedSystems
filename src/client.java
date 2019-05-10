@@ -82,7 +82,7 @@ public class client {
 		}
 	}
 
-	private void runScheduler(String alg) { 
+	private void runScheduler(String alg) {
 		String buffer = sendReceive("REDY");
 		String serverChoice = null;
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
@@ -219,11 +219,22 @@ public class client {
 	}
 
 	private String bestFit(int jobReq) {
-		int bestFit = 10000;
-		int minAva = 10000;
+		int bestFit = 1000000;
+		int minAva = 604801;
 		String serverID = "";
 		String bestID = "";
 		String bestType = "";
+		
+		String lastCaseID = "";
+		for (HashMap.Entry<String, Integer> entry : serverMap.entrySet()) {
+			String key = entry.getKey();
+			int value = entry.getValue();
+			System.out.println(key + " " + value + " " + jobReq);
+			if (value>=jobReq) {
+				lastCaseID = key + " 0";
+				break;
+			}
+		}
 
 		sendReceive("RESC All");
 		String RCVD = sendReceive("OK");
@@ -234,28 +245,28 @@ public class client {
 			int serverState = Integer.parseInt(server[2]); // store server's state
 			int serverAvaiTime = Integer.parseInt(server[3]); // store server's available time
 
-			System.out.println("CPU size " + cpuSize + " Job Requirement: " + jobReq + " Server State: " + serverState);
+			//System.out.println("CPU size " + cpuSize + " Job Requirement: " + jobReq + " Server State: " + serverState);
 
 			int fitnessValue = cpuSize - jobReq;
 
 			if (cpuSize >= jobReq && serverState < 4) {
 
-				if ((fitnessValue < bestFit) || (fitnessValue == bestFit && minAva > serverAvaiTime)) {
+				if (fitnessValue < bestFit||(fitnessValue == bestFit && minAva > serverAvaiTime)) {
 					bestFit = fitnessValue;
 					minAva = serverAvaiTime;
 					bestID = server[0];
 					bestType = server[1];
-				} else {
-					serverID = server[0] + " " + server[1];
-				}
+				} 
+
 			}
 			RCVD = sendReceive("OK");
 		}
-		if (bestFit != 10000) { // checks if bestFit is available
+		if (bestFit != 1000000) { // checks if bestFit is available
 			return bestID + " " + bestType;
-		} else {
+		} else if(serverID!=""){
 			return serverID;
-		}
+		} 
+		return lastCaseID;
 	}
 
 	public static void main(String args[]) {
