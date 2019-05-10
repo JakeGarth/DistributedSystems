@@ -85,17 +85,19 @@ public class client {
 		String serverChoice = null;
 		while (!buffer.equals("NONE")) {// server sends NONE when out of jobs
 			String[] jobN = buffer.split(" ");// split job into parts
+			int cpuREQ = Integer.parseInt(jobN[4]);
+			int memREQ = Integer.parseInt(jobN[5]);
+			int diskREQ = Integer.parseInt(jobN[6]);
 
 			switch (alg) {// check argument case
 			case "ff":
-				serverChoice = firstFit(Integer.parseInt(jobN[4]));
+				serverChoice = firstFit(cpuREQ);
 				break;
 			case "wf":
-				serverChoice = worstFit(Integer.parseInt(jobN[1]), Integer.parseInt(jobN[4]), Integer.parseInt(jobN[5]),
-						Integer.parseInt(jobN[6]));
+				serverChoice = worstFit(cpuREQ, memREQ,diskREQ);
 				break;
 			case "bf":
-				serverChoice = bestFit(Integer.parseInt(jobN[4]));
+				serverChoice = bestFit(cpuREQ);
 				break;
 			}
 			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to first fit server
@@ -108,8 +110,8 @@ public class client {
 			String send = s + "\n";
 			out.write(send.getBytes());
 			String RCVD = dInput.readLine();
-			 System.out.print("SENT: " + s + "\n");
-			 System.out.println("RCVD: " + RCVD + "\n");// extra newline included
+			System.out.print("SENT: " + s + "\n");
+			System.out.println("RCVD: " + RCVD + "\n");// extra newline included
 			// intentionally for legibility
 			return RCVD;
 		} catch (IOException i) {
@@ -190,7 +192,7 @@ public class client {
 		return serverID;
 	}
 
-	private String worstFit(int subTime, int cpuREQ, int memREQ, int diskREQ) {
+	private String worstFit( int cpuREQ, int memREQ, int diskREQ) {
 		int worstFit = -1;
 		int altFit = -1;
 		int worstWorstFit = -1;
@@ -203,23 +205,21 @@ public class client {
 
 		String RCVD = "";
 
-		// sendReceive("RESC Avail " + cpuREQ + " " + memREQ + " " + diskREQ);// request
 		sendReceive("RESC All");
 		RCVD = sendReceive("OK");
 
 		while (!RCVD.contains(".")) {
 			String[] server = RCVD.split(" ");// split response into parts
 			int serverState = Integer.parseInt(server[2]); // server availability
-			int availTime = Integer.parseInt(server[3]); // server time left on job
 			int cpuSize = Integer.parseInt(server[4]); // CPU Size
 			int fitness = cpuSize - cpuREQ;
 
-			if (serverState<4 && serverState!=1) {
-				if (fitness > worstFit && serverState>2) {
+			if (serverState != 1 && serverState != 4) {
+				if (fitness > worstFit && (serverState == 2 || serverState == 3)) {
 					worstFit = fitness;
 					worstFitID = server[1];
 					worstFitType = server[0];
-				} else if (altFit > fitness && serverState < 4) {
+				} else if (altFit > fitness) {
 					altFit = fitness;
 					altFitID = server[1];
 					altFitType = server[0];
@@ -247,7 +247,8 @@ public class client {
 	}
 
 	public static void main(String args[]) {
-		// String argument = checkAlgorithm(args);//look through args for algorithm selector
+		// String argument = checkAlgorithm(args);//look through args for algorithm
+		// selector
 		client client = new client("127.0.0.1", 8096);
 		client.connect();// send connection strings to server
 		client.runScheduler("wf");// run scheduler WITH arguments considered
