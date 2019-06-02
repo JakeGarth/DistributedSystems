@@ -106,10 +106,10 @@ public class client {
 			case "wf":
 				serverChoice = worstFit(cpuREQ, memREQ, diskREQ);
 				break;
-			case "mf":
+			case "cf":
 				serverChoice = modFit(cpuREQ, memREQ, diskREQ);
 			default:
-				serverChoice = modFit(cpuREQ, memREQ, diskREQ);// largestServer
+				serverChoice = largestServer;// largestServer
 				break;
 			}
 			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to server based on alg
