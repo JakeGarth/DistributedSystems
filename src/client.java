@@ -1,9 +1,8 @@
 
 // A Java program for a client 
 import java.net.*;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
+import java.util.HashMap;
 import java.io.*;
 //
 
@@ -15,7 +14,7 @@ public class client {
 	private DataInputStream dInput = null;
 	private String address;
 	private int port;
-	private HashMap<String, Integer> serverMap = new HashMap<String, Integer>();
+	private HashMap<String, Integer[]> serverMap = new HashMap<String, Integer[]>();
 	private String largestServer = "";
 
 	// constructor for IP and Port
@@ -56,28 +55,40 @@ public class client {
 			// input.close();
 			out.close();
 			socket.close();
-		} catch (IOException i) {
+			System.out.println("...Program complete, Connection closed.");
+			for (Map.Entry<String, Integer[]> entry : serverMap.entrySet()) {
+				System.out.print(entry.getKey());
+			}
+
+		} catch (
+
+		IOException i) {
 			System.out.println(i);
 		}
 	}
 
 	private void populateServerList() {// Request all servers and order from largest to smallest
-		sendReceive("REDY");// pretend ready so we can receive info
 		String RCVD = "";
 		sendReceive("RESC All");
 		RCVD = sendReceive("OK");
-		int prevLargestCPU = -1;
-
-		while (!RCVD.contains(".")) {
+		int largestCpu = 0;
+		while (!RCVD.equals(".")) {
 			String[] server = RCVD.split(" ");
-
-			int cpuSize = Integer.parseInt(server[4]);
 			String serverName = server[0];
+			Integer[] serverDetails = new Integer[3];
+			serverDetails[0] = Integer.parseInt(server[4]);
+			serverDetails[1] = Integer.parseInt(server[5]);
+			serverDetails[2] = Integer.parseInt(server[6]);
+			if (!serverMap.containsKey(serverName)) {
+				serverMap.put(serverName, serverDetails);
+			}
+
 			RCVD = sendReceive("OK");
-			serverMap.put(serverName, cpuSize);// list of all servers by CPUsize
-			if (cpuSize > prevLargestCPU) {
-				prevLargestCPU = cpuSize;
-				largestServer = server[0] + " " + server[1];
+		}
+		for (Map.Entry<String, Integer[]> entry : serverMap.entrySet()) {
+			if (entry.getValue()[0] > largestCpu) {
+				largestServer = entry.getKey();
+				largestCpu = entry.getValue()[0];
 			}
 		}
 	}
@@ -92,17 +103,13 @@ public class client {
 			int diskREQ = Integer.parseInt(jobN[6]);
 
 			switch (alg) {// check argument case
-			case "ff":
-				serverChoice = firstFit(cpuREQ);
-				break;
 			case "wf":
 				serverChoice = worstFit(cpuREQ, memREQ, diskREQ);
 				break;
-			case "bf":
-				serverChoice = bestFit(cpuREQ);
-				break;
+			case "mf":
+				serverChoice = modFit(cpuREQ, memREQ, diskREQ);
 			default:
-				serverChoice = largestServer;
+				serverChoice = modFit(cpuREQ, memREQ, diskREQ);// largestServer
 				break;
 			}
 			sendReceive("SCHD " + jobN[2] + " " + serverChoice);// assign job to server based on alg
@@ -136,50 +143,62 @@ public class client {
 		return "";
 	}
 
-	private String firstFit(int jobRequirement) {
-		String serverID = "";
-		String RCVD = "";
-		boolean changed = false;
-		sendReceive("RESC All");// request
-		RCVD = sendReceive("OK");
-		int smallest = 99999;
-		int smallestICPU = 99999;
-		while (!RCVD.contains(".")) {
+	private String modFit(int cpuREQ, int memREQ, int diskREQ) {
+		String bestConfType = "";
+		double maxConf = 0;
 
-			String[] server = RCVD.split(" ");// split response into parts
-			int cpuSize = Integer.parseInt(server[4]);// store CPU
-			int serverState = Integer.parseInt(server[2]);
+		for (Map.Entry<String, Integer[]> entry : serverMap.entrySet()) {// check server type list
+			double typeCPU = entry.getValue()[0];
+			double typeMEM = entry.getValue()[1];
+			double typeDISK = entry.getValue()[2];
 
-			if (cpuSize >= jobRequirement && smallest > cpuSize && serverState < 4) {
-				if (cpuSize < serverMap.get(server[0]) && changed == true && smallest <= serverMap.get(server[0])) {
-				} else {
-					serverID = server[0] + " " + server[1];
-					changed = true;
-					smallest = serverMap.get(server[0]);
+			if (typeCPU >= cpuREQ && typeMEM >= memREQ && typeDISK >= diskREQ) {// if server type can run job
+				sendReceive("RESC Type " + entry.getKey());// get list of server type
+				String buffer = sendReceive("OK");
+
+				while (!buffer.contains(".")) {// check each individual server
+					String[] thisServer = buffer.split(" ");// save parts
+					String serverName = thisServer[0] + " " + thisServer[1];
+					int serverState = Integer.parseInt(thisServer[2]);
+					double confidence = calculateConfidence(thisServer, cpuREQ, memREQ, diskREQ);
+
+					if (confidence > maxConf && (serverState < 4)) {
+						maxConf = confidence;
+						bestConfType = serverName;
+						System.out.println("Server CONF IS " + confidence + " AT " + bestConfType);
+					}
+					buffer = sendReceive("OK");
 				}
 			}
-			RCVD = sendReceive("OK");
 		}
-		if (serverID == "") {
-			int smallestInitial = 9999999;
-			String smallestServer = "";
-			for (HashMap.Entry<String, Integer> entry : serverMap.entrySet()) {
-				String key = entry.getKey();
-				Integer value = entry.getValue();
-
-				if (jobRequirement < value && value < smallestInitial) {
-					smallestInitial = value;
-					smallestServer = key + " 0";
-				}
-				if (jobRequirement == value) {
-					smallestServer = key + " 0";
-					break;
-				}
-			}
-			serverID = smallestServer;
-		}
-		return serverID;
+		if (maxConf > 0) {
+			return bestConfType;
+		} else
+			return largestServer;
 	}
+
+	private double calculateConfidence(String thisServer[], int jobCPU, int jobMEM, int jobDISK) {
+		double serverCPU = Integer.parseInt(thisServer[4]);
+		double serverMEM = Integer.parseInt(thisServer[5]);
+		double serverDISK = Integer.parseInt(thisServer[6]);
+		if (serverCPU > 0 && serverMEM > 0 && serverDISK > 0) {// calc individual confidence values
+			double cpuConf = (double) jobCPU / serverCPU;
+			double memConf = (double) jobMEM / serverMEM;
+			double diskConf = (double) jobDISK / serverDISK;
+			return (cpuConf * diskConf * memConf);// calculate combined confidence
+		} else// give extra weight to cpu
+			return 0;
+	}
+
+	public static void main(String args[]) {
+		String argument = checkAlgorithm(args);// look through args for algorithm selector
+		client client = new client("127.0.0.1", 8096);
+		client.connect();// send connection strings to server
+		client.runScheduler(argument);// run scheduler WITH arguments considered
+		client.disconnect();// disconnect
+	}
+
+	// -------------------------------------------------------------------
 
 	private String worstFit(int cpuREQ, int memREQ, int diskREQ) {
 		int worstFit = -1;
@@ -216,64 +235,5 @@ public class client {
 			return altFitType + " " + altFitID;
 		}
 		return largestServer;
-	}
-
-	private String bestFit(int jobReq) {
-		int bestFit = 1000000;
-		int minAva = 604801;
-		String serverID = "";
-		String bestID = "";
-		String bestType = "";
-		
-		String lastCaseID = "";
-		for (HashMap.Entry<String, Integer> entry : serverMap.entrySet()) {
-			String key = entry.getKey();
-			int value = entry.getValue();
-			System.out.println(key + " " + value + " " + jobReq);
-			if (value>=jobReq) {
-				lastCaseID = key + " 0";
-				break;
-			}
-		}
-
-		sendReceive("RESC All");
-		String RCVD = sendReceive("OK");
-
-		while (!RCVD.contains(".")) {
-			String[] server = RCVD.split(" ");// split response into parts
-			int cpuSize = Integer.parseInt(server[4]); // store CPU
-			int serverState = Integer.parseInt(server[2]); // store server's state
-			int serverAvaiTime = Integer.parseInt(server[3]); // store server's available time
-
-			//System.out.println("CPU size " + cpuSize + " Job Requirement: " + jobReq + " Server State: " + serverState);
-
-			int fitnessValue = cpuSize - jobReq;
-
-			if (cpuSize >= jobReq && serverState < 4) {
-
-				if (fitnessValue < bestFit||(fitnessValue == bestFit && minAva > serverAvaiTime)) {
-					bestFit = fitnessValue;
-					minAva = serverAvaiTime;
-					bestID = server[0];
-					bestType = server[1];
-				} 
-
-			}
-			RCVD = sendReceive("OK");
-		}
-		if (bestFit != 1000000) { // checks if bestFit is available
-			return bestID + " " + bestType;
-		} else if(serverID!=""){
-			return serverID;
-		} 
-		return lastCaseID;
-	}
-
-	public static void main(String args[]) {
-		String argument = checkAlgorithm(args);// look through args for algorithm selector
-		client client = new client("127.0.0.1", 8096);
-		client.connect();// send connection strings to server
-		client.runScheduler(argument);// run scheduler WITH arguments considered
-		client.disconnect();// disconnect
 	}
 }
