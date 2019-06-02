@@ -108,6 +108,7 @@ public class client {
 				break;
 			case "cf":
 				serverChoice = modFit(cpuREQ, memREQ, diskREQ);
+				break;
 			default:
 				serverChoice = largestServer;// largestServer
 				break;
